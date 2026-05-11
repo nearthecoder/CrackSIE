@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CrackSIE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #1e1e1e;
+    --text: #f0f0f0;
+    --muted: #555;
+    --accent: #c8f135;
+    --accent-dim: rgba(200,241,53,0.12);
+    --red: #ff4444;
+    --red-dim: rgba(255,68,68,0.12);
+    --green: #44ff88;
+    --green-dim: rgba(68,255,136,0.12);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    font-family: 'Syne', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* SPLASH */
+  #splash {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    z-index: 100;
+    background: var(--bg);
+    transition: opacity 0.5s ease;
+  }
+  #splash h1 {
+    font-size: clamp(52px, 14vw, 80px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  #splash p {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #splash-btn {
+    margin-top: 32px;
+    padding: 14px 48px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  #splash-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* STATS BAR */
+  #statsbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    z-index: 50;
+    background: var(--bg);
+  }
+  #statsbar .brand {
+    font-size: 14px; font-weight: 800;
+    color: var(--accent); letter-spacing: 1px;
+  }
+  #statsbar .stats {
+    display: flex; gap: 20px; align-items: center;
+  }
+  #statsbar .stat {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--muted);
+  }
+  #statsbar .stat span { color: var(--text); font-weight: 500; }
+
+  /* PROGRESS BAR */
+  #progress-track {
+    position: fixed; top: 48px; left: 0; right: 0;
+    height: 2px; background: var(--border);
+  }
+  #progress-fill {
+    height: 100%; background: var(--accent);
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* MAIN */
+  #main {
+    position: fixed; inset: 0;
+    padding-top: 70px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding-left: 20px; padding-right: 20px;
+    padding-bottom: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #main.show { opacity: 1; pointer-events: all; }
+
+  /* SECTION TAG */
+  #section-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    align-self: flex-start;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  /* QUESTION */
+  #question-wrap {
+    width: 100%; max-width: 520px;
+    margin-bottom: 24px;
+  }
+  #question-text {
+    font-size: clamp(17px, 4vw, 22px);
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  /* OPTIONS */
+  #options {
+    width: 100%; max-width: 520px;
+    display: flex; flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .option {
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateX(3px);
+  }
+  .option .letter {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 16px;
+    margin-top: 2px;
+  }
+  .option.correct {
+    border-color: var(--green);
+    background: var(--green-dim);
+  }
+  .option.correct .letter { color: var(--green); }
+  .option.wrong {
+    border-color: var(--red);
+    background: var(--red-dim);
+  }
+  .option.wrong .letter { color: var(--red); }
+  .option:disabled { cursor: default; transform: none; }
+
+  /* EXPLANATION */
+  #explanation {
+    width: 100%; max-width: 520px;
+    padding: 16px 18px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-dim);
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(240,240,240,0.85);
+    margin-bottom: 20px;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+  #explanation.show { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* NEXT BTN */
+  #next-btn {
+    width: 100%; max-width: 520px;
+    padding: 15px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: none;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  #next-btn.show { display: block; }
+  #next-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* RESULT SCREEN */
+  #result {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 40px 20px;
+    text-align: center;
+  }
+  #result.show { display: flex; }
+  #result h2 {
+    font-size: clamp(36px, 10vw, 60px);
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  #result .score-line {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  #result .breakdown {
+    display: flex; gap: 24px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #result .bk {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 24px;
+    min-width: 100px;
+  }
+  #result .bk-val {
+    font-size: 28px; font-weight: 800;
+    color: var(--text);
+  }
+  #result .bk-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-top: 4px;
+  }
+  #restart-btn {
+    padding: 14px 48px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none; border-radius: 2px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 14px;
+    letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* SECTION SELECTOR */
+  #section-select {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 40px 20px;
+    gap: 12px;
+  }
+  #section-select.show { display: flex; }
+  #section-select h2 {
+    font-size: 22px; font-weight: 800;
+    color: var(--text); margin-bottom: 8px;
+    text-align: center;
+  }
+  #section-select p {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 16px; text-align: center;
+  }
+  .section-btn {
+    width: 100%; max-width: 400px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 600;
+    color: var(--text); cursor: pointer;
+    text-align: left;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .section-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .section-btn .pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--accent);
+  }
+  .all-btn {
+    margin-top: 8px;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    font-weight: 800 !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <h1>CrackSIE</h1>
+  <p>SIE Exam Prep · Retrieval Method</p>
+  <button id="splash-btn" onclick="showSectionSelect()">Start</button>
+</div>
+
+<!-- SECTION SELECTOR -->
+<div id="section-select">
+  <h2>Pick a section</h2>
+  <p>Question first. Answer second. Always.</p>
+  <button class="section-btn" onclick="startSession(1)">
+    <span>Section 1 — Capital Markets</span>
+    <span class="pct">16%</span>
+  </button>
+  <button class="section-btn" onclick="startSession(2)">
+    <span>Section 2 — Products & Risks</span>
+    <span class="pct">44%</span>
+  </button>
+  <button class="section-btn" onclick="startSession(3)">
+    <span>Section 3 — Trading & Prohibited Acts</span>
+    <span class="pct">31%</span>
+  </button>
+  <button class="section-btn" onclick="startSession(4)">
+    <span>Section 4 — Regulatory Framework</span>
+    <span class="pct">9%</span>
+  </button>
+  <button class="section-btn all-btn" onclick="startSession(0)">
+    <span>All Sections — Mixed Mode</span>
+    <span class="pct">75 Q</span>
+  </button>
+</div>
+
+<!-- STATS BAR -->
+<div id="statsbar" style="display:none;">
+  <div class="brand">CrackSIE</div>
+  <div class="stats">
+    <div class="stat">✓ <span id="stat-correct">0</span></div>
+    <div class="stat">✗ <span id="stat-wrong">0</span></div>
+    <div class="stat"><span id="stat-streak">0</span> streak</div>
+  </div>
+</div>
+<div id="progress-track" style="display:none;"><div id="progress-fill"></div></div>
+
+<!-- MAIN QUIZ -->
+<div id="main">
+  <div id="section-tag"></div>
+  <div id="question-wrap">
+    <div id="question-text"></div>
+  </div>
+  <div id="options"></div>
+  <div id="explanation"></div>
+  <button id="next-btn" onclick="nextQuestion()">Next →</button>
+</div>
+
+<!-- RESULT -->
+<div id="result">
+  <h2 id="result-pct"></h2>
+  <div class="score-line" id="result-line"></div>
+  <div class="breakdown">
+    <div class="bk"><div class="bk-val" id="r-correct"></div><div class="bk-label">Correct</div></div>
+    <div class="bk"><div class="bk-val" id="r-wrong"></div><div class="bk-label">Wrong</div></div>
+    <div class="bk"><div class="bk-val" id="r-pct"></div><div class="bk-label">Score</div></div>
+  </div>
+  <button id="restart-btn" onclick="showSectionSelect()">Go Again</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  // SECTION 1 — Capital Markets
+  {s:1, q:"What is the primary purpose of the SEC?", opts:["To set interest rates for banks","To regulate and oversee securities markets and protect investors","To insure bank deposits up to $250,000","To control the money supply"], correct:1, exp:"The SEC — Securities and Exchange Commission — exists to protect investors and maintain fair, orderly markets. Think of it as the cop of Wall Street. It has no role in bank deposits (that's FDIC) or interest rates (that's the Fed)."},
+  {s:1, q:"FINRA is best described as:", opts:["A government agency like the SEC","A self-regulatory organization (SRO) that oversees broker-dealers","A federal reserve bank","An insurance company for investors"], correct:1, exp:"FINRA is a self-regulatory organization — meaning the industry regulates itself under SEC oversight. It's not a government agency but has real authority over broker-dealers and registered reps. The SIE itself is a FINRA exam."},
+  {s:1, q:"The FDIC insures bank deposits up to:", opts:["$100,000 per depositor","$500,000 per depositor","$250,000 per depositor per institution","Unlimited amounts"], correct:2, exp:"FDIC — Federal Deposit Insurance Corporation — insures deposits up to $250,000 per depositor per institution. This is why Fidelity is safe — it's not a bank, but your cash is protected through SIPC up to $500,000."},
+  {s:1, q:"What is the difference between the primary market and secondary market?", opts:["Primary market is for stocks, secondary is for bonds","Primary is where new securities are issued to raise money; secondary is where investors trade existing securities","Primary market is regulated; secondary is not","Primary is for large investors only"], correct:1, exp:"Primary market = company sells new shares directly to raise capital (like an IPO). Secondary market = investors trade those shares among themselves on exchanges like NASDAQ. When you buy VOO on Fidelity you're in the secondary market."},
+  {s:1, q:"Which entity controls monetary policy in the United States?", opts:["The Treasury Department","Congress","The Federal Reserve","The SEC"], correct:2, exp:"The Federal Reserve controls monetary policy — meaning interest rates and money supply. The Treasury handles fiscal policy (government spending and taxes). This distinction is on the SIE because it affects how markets move."},
+  {s:1, q:"What is GDP?", opts:["The total value of a country's stock market","The total market value of all goods and services produced in a country in a given period","The government's total debt outstanding","The amount of currency in circulation"], correct:1, exp:"GDP — Gross Domestic Product — measures the total economic output of a country. When GDP is growing the economy is expanding. When it shrinks two quarters in a row that's a recession. It's the main scorecard for how an economy is doing."},
+  {s:1, q:"An IPO stands for:", opts:["Internal Portfolio Offering","Initial Public Offering","International Purchase Order","Institutional Private Offering"], correct:1, exp:"An IPO — Initial Public Offering — is when a private company sells shares to the public for the first time to raise money. After the IPO the shares trade on the secondary market. Companies like Uber, Airbnb, and Nvidia all went public through IPOs."},
+  {s:1, q:"The discount rate is:", opts:["The rate banks charge each other for overnight loans","The rate the Federal Reserve charges banks for short-term loans","The interest rate on Treasury bonds","The rate consumers pay on credit cards"], correct:1, exp:"The discount rate is what the Fed charges banks when they borrow directly from the Federal Reserve. It's different from the federal funds rate which is what banks charge each other. Both influence the cost of borrowing throughout the whole economy."},
+
+  // SECTION 2 — Products & Risks (biggest section, most questions)
+  {s:2, q:"What is the key difference between common stock and preferred stock?", opts:["Common stock pays higher dividends","Preferred stock has voting rights; common does not","Common stock has voting rights; preferred stockholders get priority for dividends and in liquidation","They are identical products"], correct:2, exp:"Common stockholders vote on company matters but are last in line if the company goes bankrupt. Preferred stockholders get paid dividends first and have priority in liquidation — but usually can't vote. Think preferred = priority, common = control."},
+  {s:2, q:"When interest rates rise, what happens to existing bond prices?", opts:["Bond prices rise","Bond prices fall","Bond prices stay the same","It depends on the bond issuer"], correct:1, exp:"This is one of the most tested concepts on the SIE. Bond prices and interest rates move in OPPOSITE directions. If rates rise, new bonds offer better yields, making old bonds less attractive — so their price drops. You own VOO which holds stocks, not bonds, so this affects you differently."},
+  {s:2, q:"What does ETF stand for and what makes it different from a mutual fund?", opts:["Equity Trade Fund — it only holds stocks","Exchange-Traded Fund — it trades on an exchange like a stock throughout the day, while mutual funds price once daily at market close","Electronic Transfer Fund — it moves money between accounts","Exempt Tax Fund — it has special tax treatment"], correct:1, exp:"ETF = Exchange-Traded Fund. The key difference from mutual funds: ETFs trade live on exchanges all day like stocks. VOO and QQQM are ETFs — you can buy or sell them any time during market hours. Mutual funds only price and trade once per day after market close."},
+  {s:2, q:"A Treasury bond is best described as:", opts:["A stock issued by the US government","A debt instrument issued by the US federal government, considered the safest investment in the world","A municipal bond issued by state governments","A corporate bond with government backing"], correct:1, exp:"Treasury bonds are debt issued by the US federal government. You lend the government money, they pay you interest, and return your principal at maturity. Because the US government can print money to repay debts, Treasuries are considered risk-free and are the benchmark against which all other investments are measured."},
+  {s:2, q:"What is a mutual fund's NAV?", opts:["Net Annual Value — the yearly return of the fund","Net Asset Value — the per-share value of the fund calculated at end of each trading day","Nominal Asset Valuation — the original purchase price","Net Appreciation Value — only the gains portion"], correct:1, exp:"NAV = Net Asset Value. It's calculated by taking total assets minus liabilities divided by shares outstanding. For open-end mutual funds this is calculated once per day at market close. When you see a mutual fund quoted at $47.32, that's the NAV."},
+  {s:2, q:"What is a put option?", opts:["The right to buy a stock at a specific price before expiration","The right to sell a stock at a specific price before expiration","An obligation to buy shares at market price","A type of bond with optional features"], correct:1, exp:"A put option gives you the RIGHT (not obligation) to SELL a stock at a specific price (strike price) before expiration. If you own a put on NVDA with a $200 strike and the stock drops to $150, you can still sell at $200. Puts are used for protection or to bet a stock will fall."},
+  {s:2, q:"What is a call option?", opts:["The right to sell a stock at a specific price before expiration","A bond that can be recalled by the issuer","The right to buy a stock at a specific price before expiration","An obligation to sell shares at market price"], correct:2, exp:"A call option gives you the RIGHT to BUY a stock at a specific price before expiration. If you own a call on NVDA with a $200 strike and the stock hits $250, you can buy at $200 — instant $50 profit per share. Calls are used to bet a stock will rise."},
+  {s:2, q:"What is inflation risk?", opts:["The risk that a company goes bankrupt","The risk that rising prices erode the purchasing power of your investment returns","The risk of currency fluctuations in international markets","The risk of an investment being hard to sell"], correct:1, exp:"Inflation risk (also called purchasing power risk) means your returns don't keep up with inflation. If your investment earns 3% but inflation is 4%, you've actually lost purchasing power. This is why keeping all your money in a savings account earning 0.5% is actually risky long term."},
+  {s:2, q:"What is liquidity risk?", opts:["The risk that a company can't pay its debts","The risk that you can't sell an investment quickly without significantly dropping its price","The risk that interest rates change","The risk of fraud in the securities market"], correct:1, exp:"Liquidity risk = can you get your money out when you need it? Stocks like NVDA or VOO have high liquidity — millions of shares trade daily. A private real estate investment or thinly traded penny stock has high liquidity risk — you might not find a buyer at a fair price when you need to sell."},
+  {s:2, q:"REITs — Real Estate Investment Trusts — are known for:", opts:["Being illiquid investments only available to institutions","Providing real estate exposure and being required to distribute at least 90% of taxable income as dividends","Only investing in commercial real estate","Avoiding all taxes through special government status"], correct:1, exp:"REITs must distribute at least 90% of their taxable income to shareholders as dividends — that's the law. In exchange they avoid double taxation. This makes them attractive for income investors. You can buy publicly traded REITs on stock exchanges just like buying a stock."},
+  {s:2, q:"What is a 529 plan?", opts:["A retirement account like a Roth IRA","A tax-advantaged savings account specifically for education expenses","A government bond issued in 1929","A type of life insurance policy"], correct:1, exp:"A 529 plan is a tax-advantaged account for education savings. Contributions aren't federally deductible but grow tax-free and withdrawals for qualified education expenses are tax-free. Some states offer state tax deductions for contributions."},
+  {s:2, q:"Diversification primarily helps reduce what type of risk?", opts:["Systematic risk (market-wide risk)","Non-systematic risk (company-specific or sector-specific risk)","Inflation risk","Liquidity risk"], correct:1, exp:"Diversification reduces non-systematic risk — the risk specific to one company or industry. If you own only NVDA and it crashes, you lose everything. If you own VOO with 500 companies, one company crashing barely moves the needle. However diversification cannot eliminate systematic risk — a full market crash affects everyone."},
+  {s:2, q:"What is a corporate bond?", opts:["Stock issued by a corporation","Debt issued by a corporation where the company promises to pay interest and return principal at maturity","A government-backed security","A derivative product based on corporate earnings"], correct:1, exp:"A corporate bond is a loan you make to a company. They pay you interest (the coupon) periodically and return your principal at the maturity date. Riskier than Treasury bonds because companies can default. Higher risk = higher interest rate offered. Apple, Amazon, and most major companies issue bonds."},
+  {s:2, q:"What does 'in the money' mean for a call option?", opts:["The option has expired worthless","The stock price is above the strike price, giving the option intrinsic value","The option holder has made a profit after fees","The option is close to its expiration date"], correct:1, exp:"A call option is 'in the money' when the stock price is ABOVE the strike price. Example: you own a call with $200 strike price and NVDA is trading at $215. Your option is in the money by $15. It has real intrinsic value you could exercise or sell right now."},
+
+  // SECTION 3 — Trading & Prohibited Activities
+  {s:3, q:"What is a market order?", opts:["An order to buy or sell at a specific price or better","An order to buy or sell immediately at the current market price","An order that remains open until cancelled","An order placed after market hours"], correct:1, exp:"A market order executes immediately at whatever the current market price is. When you bought VOO and QQQM you likely used market orders — you wanted in immediately at whatever the price was. Fast execution but you don't control the exact price you get."},
+  {s:3, q:"What is a limit order?", opts:["An order that executes immediately at market price","An order to buy or sell only at a specified price or better","An order limited to certain securities","An order that expires at end of day"], correct:1, exp:"A limit order sets the maximum price you'll pay (buy limit) or minimum you'll accept (sell limit). You control the price but not whether it fills. If the stock never reaches your price, your order doesn't execute. Remember when Fidelity rejected your after-hours order? That's because market orders can't execute after hours — a limit order would have been accepted."},
+  {s:3, q:"What is insider trading?", opts:["Trading stocks based on public news","Buying and selling securities based on material, non-public information","Trading by company insiders is always illegal","Trading more than a certain volume of shares"], correct:1, exp:"Insider trading = using information the public doesn't have access to in order to trade securities. Example: you work at a company and learn before anyone else that earnings will be terrible. If you sell your stock before that news goes public, that's insider trading. It's a federal crime — people go to prison for this."},
+  {s:3, q:"What is a 'pump and dump' scheme?", opts:["A legitimate strategy for boosting stock prices","Artificially inflating a stock's price through false statements then selling at the peak before it crashes","A method of dollar-cost averaging","Buying stocks when they are undervalued"], correct:1, exp:"Pump and dump is market manipulation. Bad actors hype up a stock (the pump) through false or misleading statements, driving the price up. Then they sell their shares at the inflated price (the dump), leaving other investors with worthless stock. Common with penny stocks and crypto. It's illegal."},
+  {s:3, q:"What is the purpose of Anti-Money Laundering (AML) regulations?", opts:["To prevent tax evasion by wealthy investors","To detect and prevent criminals from disguising illegally obtained money as legitimate funds","To regulate cryptocurrency transactions only","To prevent foreign investors from entering US markets"], correct:1, exp:"AML regulations exist to stop criminals from making 'dirty money' look clean. The three stages are placement (getting dirty money into the financial system), layering (moving it around to obscure its origin), and integration (it looks like legitimate funds). Financial firms must file Suspicious Activity Reports (SARs) when they detect potential money laundering."},
+  {s:3, q:"A Suspicious Activity Report (SAR) must be filed within how many days of detecting suspicious activity?", opts:["24 hours","30 days","10 days","60 days"], correct:1, exp:"Firms must file a SAR within 30 days of detecting suspicious activity. If it takes more time to identify a suspect, there's a 60-day extension. SARs are filed with FinCEN — the Financial Crimes Enforcement Network. The customer must NOT be told a SAR was filed on them."},
+  {s:3, q:"What is the difference between a cash account and a margin account?", opts:["Cash accounts earn interest; margin accounts don't","In a cash account you pay in full for securities; in a margin account you can borrow money from the broker to buy more securities","Cash accounts are for bonds only; margin accounts are for stocks","There is no difference"], correct:1, exp:"Cash account = you pay the full purchase price upfront. Margin account = you can borrow up to 50% of a stock's purchase price from your broker (Regulation T). Margin amplifies both gains and losses. You can lose more than you invested. For beginners like you right now, cash accounts are the right move."},
+  {s:3, q:"What does 'Know Your Customer' (KYC) mean in finance?", opts:["A marketing technique to understand customer preferences","A regulatory requirement for firms to verify and understand their clients' financial situation, goals, and risk tolerance before making recommendations","A fraud prevention measure for credit cards only","A rule requiring brokers to know client birthdays"], correct:1, exp:"KYC means financial firms must understand who their customers are and what's appropriate for them before giving advice or recommendations. Age, income, investment goals, risk tolerance — all of it. This is why when you open a brokerage account they ask all those questions. It's not optional — it's legally required."},
+  {s:3, q:"What is front running?", opts:["Executing customer orders as fast as possible","A broker trading for their own account ahead of executing a large customer order they know will move the market","A strategy of buying IPOs before they open","Selling securities before they settle"], correct:1, exp:"Front running = a broker knows a large customer order is coming that will move the stock price, so they buy for their own account first to profit from the anticipated price movement. It's illegal market manipulation. Like if you worked at a restaurant and ate the best dish before serving it to the customer who ordered it."},
+
+  // SECTION 4 — Regulatory Framework
+  {s:4, q:"What is Form U4?", opts:["A tax form for investment income","The uniform registration form used to register securities industry employees with FINRA and states","A form for reporting suspicious activity","The form used to open a brokerage account"], correct:1, exp:"Form U4 is the Uniform Application for Securities Industry Registration. It's the background disclosure form every registered person must file. It covers criminal history, financial issues, customer complaints — anything that could affect fitness to work in the industry. Lying on a U4 is a serious violation."},
+  {s:4, q:"What does continuing education (CE) require for registered representatives?", opts:["No ongoing education required after passing exams","Ongoing training through both a Firm Element (firm-specific training) and Regulatory Element (FINRA-administered) to maintain registration","Only studying for the next license exam","Attending annual conferences"], correct:1, exp:"Registered reps must complete continuing education to keep their licenses active. The Regulatory Element is FINRA-administered and covers compliance, regulatory, and ethical topics. The Firm Element is training firms design themselves based on their specific business. CE keeps professionals updated on changing rules and market conditions."},
+  {s:4, q:"What is statutory disqualification?", opts:["A temporary suspension from trading","Being barred or suspended from the securities industry due to certain criminal convictions, regulatory sanctions, or other disqualifying events","A tax penalty for early IRA withdrawal","The process for revoking a broker license temporarily"], correct:1, exp:"Statutory disqualification means a person is legally banned from associating with a FINRA member firm. It can result from felony convictions, certain misdemeanors, false statements on regulatory forms, or being expelled by another SRO. It's a serious permanent consequence that ends careers in finance."},
+  {s:4, q:"Outside business activities (OBA) of a registered representative:", opts:["Are always prohibited","Must be reported to and approved by the employing firm before engaging in them","Are only allowed if they involve finance","Are only required to be disclosed if they earn over $10,000"], correct:1, exp:"Registered reps must disclose outside business activities to their firm and get approval before starting them. This prevents conflicts of interest and ensures customers aren't misled about what their advisor is doing. Even something like a part-time job at another company must be disclosed. Near Inc. would be an OBA you'd have to disclose."},
+  {s:4, q:"The SIPC protects investors against:", opts:["Investment losses from market declines","The financial failure of a brokerage firm — missing cash and securities up to $500,000","All types of securities fraud","Bank account losses"], correct:1, exp:"SIPC — Securities Investor Protection Corporation — protects you if your brokerage goes BANKRUPT and your assets go missing. It covers up to $500,000 in securities ($250,000 in cash). It does NOT protect against investment losses from bad investments. This is exactly why Fidelity being SIPC-protected matters — if Fidelity went under, your VOO and QQQM are protected."}
+];
+
+let currentSession = [];
+let currentIndex = 0;
+let correct = 0;
+let wrong = 0;
+let streak = 0;
+let answered = false;
+
+function showSectionSelect() {
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('statsbar').style.display = 'none';
+  document.getElementById('progress-track').style.display = 'none';
+  document.getElementById('main').classList.remove('show');
+  document.getElementById('section-select').classList.add('show');
+}
+
+function startSession(section) {
+  document.getElementById('section-select').classList.remove('show');
+  document.getElementById('statsbar').style.display = 'flex';
+  document.getElementById('progress-track').style.display = 'block';
+  document.getElementById('main').classList.add('show');
+
+  if (section === 0) {
+    currentSession = shuffle([...QUESTIONS]);
+  } else {
+    currentSession = shuffle(QUESTIONS.filter(q => q.s === section));
+  }
+
+  currentIndex = 0;
+  correct = 0;
+  wrong = 0;
+  streak = 0;
+  updateStats();
+  loadQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function updateStats() {
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-streak').textContent = streak;
+  const pct = currentSession.length > 0 ? (currentIndex / currentSession.length) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+const SECTION_NAMES = {1:'Section 1 — Capital Markets', 2:'Section 2 — Products & Risks', 3:'Section 3 — Trading & Prohibited Acts', 4:'Section 4 — Regulatory Framework'};
+const LETTERS = ['A','B','C','D'];
+
+function loadQuestion() {
+  if (currentIndex >= currentSession.length) {
+    showResult();
+    return;
+  }
+  answered = false;
+  const q = currentSession[currentIndex];
+  document.getElementById('section-tag').textContent = SECTION_NAMES[q.s] + ' · Q' + (currentIndex+1) + ' of ' + currentSession.length;
+  document.getElementById('question-text').textContent = q.q;
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="letter">${LETTERS[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i, q.correct, q.exp);
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('explanation').classList.remove('show');
+  document.getElementById('explanation').textContent = '';
+  document.getElementById('next-btn').classList.remove('show');
+  updateStats();
+}
+
+function selectAnswer(chosen, correctIdx, exp) {
+  if (answered) return;
+  answered = true;
+
+  const btns = document.querySelectorAll('.option');
+  btns.forEach(b => b.disabled = true);
+
+  if (chosen === correctIdx) {
+    btns[chosen].classList.add('correct');
+    correct++;
+    streak++;
+  } else {
+    btns[chosen].classList.add('wrong');
+    btns[correctIdx].classList.add('correct');
+    wrong++;
+    streak = 0;
+  }
+
+  document.getElementById('explanation').textContent = exp;
+  document.getElementById('explanation').classList.add('show');
+  document.getElementById('next-btn').classList.add('show');
+  updateStats();
+}
+
+function nextQuestion() {
+  currentIndex++;
+  loadQuestion();
+}
+
+function showResult() {
+  document.getElementById('main').classList.remove('show');
+  document.getElementById('statsbar').style.display = 'none';
+  document.getElementById('progress-track').style.display = 'none';
+
+  const total = currentSession.length;
+  const pct = Math.round((correct / total) * 100);
+  const pass = pct >= 70;
+
+  document.getElementById('result-pct').textContent = pct + '%';
+  document.getElementById('result-line').textContent = (pass ? '✓ PASS — ' : '✗ KEEP GRINDING — ') + correct + ' of ' + total + ' correct';
+  document.getElementById('r-correct').textContent = correct;
+  document.getElementById('r-wrong').textContent = wrong;
+  document.getElementById('r-pct').textContent = pct + '%';
+  document.getElementById('result').classList.add('show');
+
+  document.getElementById('result-pct').style.color = pass ? 'var(--green)' : 'var(--accent)';
+}
+
+// Hide splash after a beat
+setTimeout(() => {}, 100);
+</script>
+</body>
+</html>
